@@ -1,57 +1,66 @@
-import xgboost as xgb
-import optuna
-import numpy as np
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import roc_auc_score
+from sklearn.ensemble import StackingClassifier
+from sklearn.linear_model import LogisticRegression
+import lightgbm as lgb
+from catboost import CatBoostClassifier
 
-def objective(trial, X, y):
+def train_stacking_ensemble(X, y):
     """
-    Função objetivo para a Otimização Bayesiana (Optuna).
+    Constrói e treina um Stacking Ensemble de Estado da Arte.
+    Nível 0: XGBoost, LightGBM, CatBoost
+    Nível 1: Regressão Logística (Meta-Modelo)
     """
-    params = {
-        'objective': 'binary:logistic',
-        'eval_metric': 'auc',
-        'booster': 'gbtree',
-        'random_state': 42,
-        
-        # Espaço de busca (Hiperparâmetros avançados)
-        'scale_pos_weight': trial.suggest_float('scale_pos_weight', 10.0, 150.0),
-        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.2),
-        'max_depth': trial.suggest_int('max_depth', 3, 10),
-        'subsample': trial.suggest_float('subsample', 0.6, 1.0),
-        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
-        'lambda': trial.suggest_float('lambda', 1e-3, 10.0, log=True),
-        'alpha': trial.suggest_float('alpha', 1e-3, 10.0, log=True)
-    }
-
-    # Validação Cruzada Estratificada interna
-    kf = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
-    auc_scores = []
+    print("🏗️ A montar a arquitetura do Stacking Ensemble...")
     
-    for train_idx, val_idx in kf.split(X, y):
-        X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
-        y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
-        
-        # early_stopping impede o modelo de treinar mais do que o necessário
-        model = xgb.XGBClassifier(**params, n_estimators=500, early_stopping_rounds=30)
-        model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
-        
-        preds = model.predict_proba(X_val)[:, 1]
-        auc_scores.append(roc_auc_score(y_val, preds))
+    # 1. Modelos Base (Nível 0)
+    # Colocamos os hiperparâmetros excelentes que o Optuna já lhe tinha dado antes
+    # Isto poupa o tempo de ter de otimizar tudo de novo!
+    xgb_model = xgb.XGBClassifier(
+        scale_pos_weight=89.8, 
+        learning_rate=0.09, 
+        max_depth=4,
+        subsample=0.84, 
+        colsample_bytree=0.87, 
+        random_state=42,
+        eval_metric='logloss'
+    )
     
-    return np.mean(auc_scores)
-
-def train_final_model(X, y, n_trials=15):
-    print("🚀 A iniciar Otimização Bayesiana com Optuna...")
-    study = optuna.create_study(direction='maximize')
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=n_trials)
+    # LightGBM (muito rápido e lida nativamente com o desbalanceamento)
+    lgb_model = lgb.LGBMClassifier(
+        scale_pos_weight=89.8, # Usamos o mesmo peso descoberto pelo Optuna
+        random_state=42, 
+        n_estimators=300,
+        verbose=-1
+    )
     
-    print(f"✅ Melhores parâmetros encontrados: {study.best_params}")
+    # CatBoost (Excecional para evitar overfitting em dados complexos)
+    cat_model = CatBoostClassifier(
+        auto_class_weights='Balanced', # Ele balança o peso automaticamente
+        random_state=42, 
+        verbose=0, 
+        iterations=300
+    )
     
-    # Treina o modelo com a melhor configuração encontrada
-    best_params = study.best_params
-    best_params['random_state'] = 42
-    final_model = xgb.XGBClassifier(**best_params, n_estimators=500)
-    final_model.fit(X, y)
+    estimators = [
+        ('xgb', xgb_model),
+        ('lgb', lgb_model),
+        ('cat', cat_model)
+    ]
     
-    return final_model
+    # 2. Meta-Modelo (Nível 1)
+    # Uma regressão logística simples para aprender a ponderar as previsões dos 3 acima
+    meta_model = LogisticRegression(class_weight='balanced', random_state=42)
+    
+    # 3. Construção do Stacking
+    # O cv=5 usa Validação Cruzada interna para treinar a regressão logística, evitando vazamento!
+    stacking_clf = StackingClassifier(
+        estimators=estimators,
+        final_estimator=meta_model,
+        cv=5,
+        n_jobs=-1 # Usa todos os núcleos do processador do seu Mac
+    )
+    
+    print("🚀 A treinar o Stacking (Pode demorar uns minutos, os modelos estão a treinar e a votar)...")
+    stacking_clf.fit(X, y)
+    print("✅ Stacking treinado com sucesso!")
+    
+    return stacking_clf
