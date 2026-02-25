@@ -1,3 +1,13 @@
+<div align="center">
+  <a href="notebooks/Willian_Rupert_Relatorio_Desafio_Individual.pdf">
+    <img src="notebooks/capa_XAI.png" alt="Capa do Projeto - Detecção de Fraudes" width="800"/>
+  </a>
+  <br><br>
+  <strong><a href="notebooks/Willian_Rupert_Relatorio_Desafio_Individual.pdf">📄 Clique aqui para acessar o Relatório Completo do Desafio (PDF)</a></strong>
+</div>
+
+<br>
+
 #  Detecção de Fraudes em Cartões de Crédito: Uma Abordagem Robusta com Stacking Ensembles e XAI
 
 **Autor:** Willian Rupert (Estudante de Ciência da Computação - CIn/UFPE)  
@@ -33,14 +43,14 @@ As árvores de decisão sofrem limitações ao lidar com fronteiras de classe di
 2. **Tempo e Logaritmo:** `Time` foi decomposto em ondas (seno/cosseno) para capturar a sazonalidade, e `Amount` recebeu transformação logarítmica.
 
 ### Fase 2: Otimização Bayesiana (Optuna)
-Em vez de depender de chutes manuais, integrei o \textit{framework} **Optuna**. O algoritmo utilizou estimadores de Parzen estruturados em árvore para varrer o hiper-espaço e encontrar as engrenagens perfeitas do modelo (como o `learning_rate=0.09` para o XGBoost).
+Em vez de depender de chutes manuais, integrei o *framework* **Optuna**. O algoritmo utilizou estimadores de Parzen estruturados em árvore para varrer o hiper-espaço e encontrar as engrenagens perfeitas do modelo (como o `learning_rate=0.09` para o XGBoost).
 
 ### Fase 3: Stacking Ensemble Calibrado e o Public Leaderboard
 A arquitetura final é composta por:
 * **Nível 0:** XGBoost, LightGBM e CatBoost otimizados e penalizando severamente a classe majoritária.
 * **Nível 1 (O Juiz):** Uma Regressão Logística operando com `class_weight='balanced'`. O meta-modelo recebe as probabilidades brutas das árvores e as calibra linearmente.
 
-**A Decisão sobre o Conjunto de Treino:** Durante a competição, testei re-treinar a rede com 100% dos dados para forçar o *score*. Contudo, essa prática gerou flutuações e perda de estabilidade ($\approx 0.985$). Tomei a decisão arquitetural consciente de **submeter a versão treinada estritamente no conjunto de 80%**. O Kaggle avalia publicamente apenas 30% dos dados. Submeter o modelo estabilizado na validação local é a prova máxima de maturidade para evitar o catastrófico *overfitting* da métrica pública e garantir o sucesso na avaliação privada (70% ocultos). Com esta disciplina, **cravei o pico absoluto de 0.99090**.
+**A Decisão sobre o Conjunto de Treino:** Durante a competição, testei re-treinar a rede com 100% dos dados para forçar o *score*. Contudo, essa prática gerou flutuações e perda de estabilidade (≈ 0.985). Tomei a decisão arquitetural consciente de **submeter a versão treinada estritamente no conjunto de 80%**. O Kaggle avalia publicamente apenas 30% dos dados. Submeter o modelo estabilizado na validação local é a prova máxima de maturidade para evitar o catastrófico *overfitting* da métrica pública e garantir o sucesso na avaliação privada (70% ocultos). Com esta disciplina, **cravei o pico absoluto de 0.99090**.
 
 ---
 
@@ -64,7 +74,7 @@ Modelos "caixa-preta" são vetados em ambientes regulados. A arquitetura foi des
 
 <br>
 
-* **Impacto Operacional (Matriz de Confusão):** O modelo é equilibrado. Restringe rigorosamente as anomalias, mas aprova tranquilamente as transações saudáveis, limitando os Falsos Positivos a uma ínfima taxa de $\approx 0.77\%$.
+* **Impacto Operacional (Matriz de Confusão):** O modelo é equilibrado. Restringe rigorosamente as anomalias, mas aprova tranquilamente as transações saudáveis, limitando os Falsos Positivos a uma ínfima taxa de ≈ 0.77%.
 
 <div align="center">
   <img src="notebooks/matriz_confusao.png" alt="Matriz de Confusão - Equilíbrio de Falsos Positivos e Negativos" width="500"/>
@@ -83,4 +93,4 @@ A base de código foi estruturada pensando em um *deploy* corporativo e não ape
 
 ## 🏁 6. Conclusão
 
-Este repositório mostra que a a robustez em *Machine Learning* reside na inteligência matemática aplicada aos dados e na disciplina metodológica. O modelo resultante atinge uma precisão ímpar (ROC-AUC de 0.99090), é auditável, robusto contra flutuações e perfeitamente dimensionado para salvar uma operação financeira real das perdas diárias por estorno.
+Este repositório mostra que a robustez em *Machine Learning* reside na inteligência matemática aplicada aos dados e na disciplina metodológica. O modelo resultante atinge uma precisão ímpar (ROC-AUC de 0.99090), é auditável, robusto contra flutuações e perfeitamente dimensionado para salvar uma operação financeira real das perdas diárias por estorno.
