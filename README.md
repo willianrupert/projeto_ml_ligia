@@ -3,7 +3,7 @@
     <img src="notebooks/capa_XAI.png" alt="Capa do Projeto - Detecção de Fraudes" width="800"/>
   </a>
   <br><br>
-  <strong><a href="notebooks/Willian_Rupert_Relatorio_Desafio_Individual.pdf">📄 Clique aqui para acessar o Relatório Completo do Desafio (PDF)</a></strong>
+  <strong><a href="notebooks/Willian_Rupert_Relatorio_Desafio_Individual.pdf">📄 Clique aqui para acessar o Artigo Completo do Desafio (PDF)</a></strong>
 </div>
 
 <br>
